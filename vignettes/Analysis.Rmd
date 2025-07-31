@@ -1,0 +1,189 @@
+---
+title: "Wind Energy Suitability Analysis in North Rhine-Westphalia"
+author: "Samuel Yohanna"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    fig_width: 7
+    fig_height: 5
+---
+
+% \VignetteIndexEntry{Wind Energy Suitability Analysis in North Rhine-Westphalia}
+% \VignetteEngine{knitr::rmarkdown}
+% \VignetteEncoding{UTF-8}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.align = "center"
+)
+library(WindSuitabilityNRW)
+```
+
+## Introduction & Motivation
+
+The importance of wind energy as a renewable energy source is evident. Increasing the share of renewable and clean energy in the global energy mix is essential for achieving United Nations Sustainable Development Goals such as SDG 7 (Affordable and Clean Energy). The Federal Government in Germany has set a target of doubling electricity generated from renewable sources by 2030. Wind power will play a major role in this effort: 2% of the land area in Germany is to be made available for wind power use by 2032 (WindBG 2022). Expanding and repowering existing wind farms is a cost-effective way to increase energy production.
+
+The planning process relies heavily on high-quality geospatial data, which is necessary to address the many constraints that apply to wind farm areas. The following are some of the exclusion criteria commonly used to assess suitability for onshore wind energy:
+
+- Residential area buffers
+
+- Nature reserves and protected biotopes
+
+- Airports and air safety zones
+
+- Highways, roads, and railways
+
+- Recreation and holiday areas
+
+Germany’s most populous state, North Rhine-Westphalia (NRW) (Wikipedia), faces both opportunity and challenge: high wind potential but land constraints from dense settlement, infrastructure, and environmental protection. Planners need tools to quantify and visualize “where wind is possible” under complex rules.
+
+The WindSuitabilityNRW package provides a reproducible, transparent analysis framework, helping decision makers, researchers, and students explore the impact of regulatory exclusion zones and user-defined criteria on wind energy potential in NRW.
+
+## Research Questions
+This vignette focuses on the following three research questions (RQs):
+
+1. To what extent is land in North Rhine-Westphalia excluded from wind turbine development due to regulatory spatial constraints?
+
+2. How are exclusion zones spatially distributed across NRW districts?
+
+3. What proportion of land remains, and where are potentially suitable areas for wind turbine development in NRW after applying all relevant exclusion criteria?
+
+##Data Description & Exploration
+The package includes geospatial data for NRW in a GeoPackage:
+inst/extdata/nrw_wind_energy_data.gpkg
+
+Available layers:
+
+- nrw_districts: District boundaries for NRW.
+
+- nrw_existing_wind_turbines: Locations of existing turbines.
+
+- nrw_residential_areas_buffer_500m: Residential areas plus 500m buffer.
+
+- nrw_federal_highway, nrw_traffic_airports, nrw_recreation_areas
+- nrw_protected_biotopes, nrw_nature_reserve, nrw_holiday_areas, nrw_general_settlement_areas
+
+## Analysis
+Key functions:
+
+wind_suitability_analysis()
+
+visualize_results()
+
+create_summary_plot()
+
+extract_summary_table()
+
+calculate_buffer_stats()
+
+export_results()
+
+district_report()
+
+## Analysis
+### Run Suitability Analysis
+
+```{r}
+result <- wind_suitability_analysis(
+  residential_buffer = 500,
+  highway_buffer     = 200,
+  airport_buffer     = 1000,
+  recreation_buffer  = 300,
+  biotope_min_area   = 10,
+  output_map         = TRUE
+)
+
+```
+Print and Summarize Results
+
+
+```{r}
+print (result)
+summary(result)
+```
+
+## Visualizing Exclusion and Suitability
+### 1. Bar chart: Suitable (%) by district
+
+```{r}
+create_summary_plot(result, plot_type = "bar")
+```
+
+### 2. Choropleth map: % Suitable per district
+```{r}
+create_summary_plot(result, plot_type = "map")
+```
+### 3. Interactive Visualization
+```{r}
+map <- visualize_results(result, show_turbines = TRUE)
+map
+```
+
+## Explore and Export Results
+
+Extract summary table of top districts:
+```{r}
+extract_summary_table(result, top_n = 5)
+```
+
+Export results for GIS (csv, gpkg, html):
+
+```{r export-results, eval=FALSE}
+export_results(
+  result,
+  output_dir = "wind_analysis_output",
+  formats    = c("csv","gpkg","html")
+)
+```
+Buffer constraint statistics:
+
+```{r}
+calculate_buffer_stats(result)
+```
+##Methods for wind_suitability_results
+```{r}
+# Top districts by suitability
+top_districts(result, n = 3)
+
+# Get statistics for a specific district
+get_district_info(result, name = "Höxter")
+```
+District-Level Report
+```{r}
+dr <- district_report(result, district_name = "Höxter")
+print(dr)
+plot(dr)
+exclusion_summary(dr)
+# Export geometry as GeoJSON 
+to_geojson(dr, file = "hoexter_district.geojson")
+
+```
+
+## Discussion
+
+In this study, exclusion analysis using 2025 data found that 28,805.6 km², representing 89.6% of North Rhine-Westphalia’s total area, is excluded from wind turbine siting due to statutory and environmental constraints. This proportion is slightly higher than the 85% exclusion reported by LANUV based on settlement areas alone, with additional overlapping exclusions for infrastructure, nature and landscape, and forests (LANUV, 2023). The observed difference may result from updates in data (2023 to 2025), variations in exclusion buffer definitions, or methodological differences in the treatment of overlapping areas. Nevertheless, both analyses demonstrate that the vast majority of NRW’s land area remains unavailable for wind energy development under current frameworks:
+
+Bar charts and choropleth maps show pronounced spatial differences:
+
+Districts with large urban footprints or overlapping nature reserves have the highest exclusion percentages, while rural districts in eastern NRW (e.g., Höxter) retain larger suitable areas.
+
+After applying all exclusions, about `r round(100 - result$summary_stats$percent_excluded, 1) `% of NRW land remains potentially suitable.
+The top three districts for suitability are:
+
+```{r}
+top_districts(result, n = 3)
+```
+
+## Conclusion
+
+The **WindSuitabilityNRW** package provides transparent, reproducible wind‐energy suitability metrics and maps for NRW. Adjust buffer distances and thresholds to explore site‑ or policy‑specific scenarios.
+
+## References
+- LANUV. (2023). Flächenanalyse Windenergie NRW. Retrieved from https://www.energieatlas.nrw.de/site/flaechenanalyse_windenergie
+- Flächenpotenzialanalyse Windenergie an Land in NI (WiNiePot)- Erläuternde Präsentation.
+ 2023-06-07. URL (accessed 2023-09-08):
+ https://www.umwelt.niedersachsen.de/startseite/aktuelles/ergebniskarten-der-windflachenpotenzialan
+ alyse-downloadmoglichkeit-220485.htm
