@@ -3,7 +3,6 @@
 #' Generates a static ggplot showing district-level wind suitability results.
 #'
 #' @param analysis_result A \code{wind_suitability_results} object
-#'   (output of \code{wind_suitability_analysis()}).
 #' @param plot_type Character; either \code{"bar"} for a bar chart, or \code{"map"} for a choropleth map. (default: \code{"bar"})
 #' @return A \code{ggplot} object
 #' @export

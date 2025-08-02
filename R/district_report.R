@@ -26,7 +26,6 @@ district_report <- function(result, district_name) {
 }
 
 #' Print method for district_report
-#'
 #' @param x A \code{district_report} object
 #' @param ... Unused
 #' @export
@@ -76,6 +75,11 @@ plot.district_report <- function(x, ...) {
 #' @param x A \code{district_report} object
 #' @param ... Unused
 #' @export
+exclusion_summary <- function(x, ...) {
+  UseMethod("exclusion_summary")
+}
+
+#' @export
 exclusion_summary.district_report <- function(x, ...) {
   cat("Exclusion summary for", x$name, ":\n")
   cat("  Total area:", round(x$stats$total_area_km2, 2), "km^2\n")
@@ -86,6 +90,17 @@ exclusion_summary.district_report <- function(x, ...) {
   invisible(x)
 }
 
+#' Export geometry to GeoJSON
+#'
+#' Export an object's geometry as GeoJSON.
+#'
+#' @param x An object
+#' @param ... Passed to method
+#' @export
+to_geojson <- function(x, ...) {
+  UseMethod("to_geojson")
+}
+
 #' Export district geometry to GeoJSON
 #'
 #' Writes the district's geometry to a GeoJSON file.
@@ -93,20 +108,11 @@ exclusion_summary.district_report <- function(x, ...) {
 #' @param x A \code{district_report} object
 #' @param file Filename for the GeoJSON output
 #' @param ... Unused
+#' @return The filename (invisibly).
 #' @export
 to_geojson.district_report <- function(x, file = paste0(x$name, "_district.geojson"), ...) {
   if (!requireNamespace("sf", quietly = TRUE)) stop("sf required")
   sf::st_write(x$geometry, file, driver = "GeoJSON", delete_dsn = TRUE, quiet = TRUE)
   message("Exported district geometry as ", file)
   invisible(file)
-}
-
-# Register the new S3 generics if needed
-#' @export
-exclusion_summary <- function(x, ...) {
-  UseMethod("exclusion_summary")
-}
-#' @export
-to_geojson <- function(x, ...) {
-  UseMethod("to_geojson")
 }

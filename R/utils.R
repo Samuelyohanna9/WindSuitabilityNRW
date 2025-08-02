@@ -7,9 +7,7 @@
 #' @return Logical indicating if data is valid
 #' @export
 validate_spatial_data <- function(data, layer_name = "data") {
-  if (!inherits(data, "sf")) {
-    stop(layer_name, " must be an sf object")
-  }
+  if (!inherits(data, "sf")) stop(layer_name, " must be an sf object")
   if (nrow(data) == 0) {
     warning(layer_name, " contains no features")
     return(FALSE)
@@ -32,33 +30,26 @@ validate_spatial_data <- function(data, layer_name = "data") {
 #' @param analysis_result Output from wind_suitability_analysis()
 #' @param top_n Integer; number of top districts to include
 #' @return data.frame with summary statistics
-#' @importFrom dplyr mutate select
 #' @export
 extract_summary_table <- function(analysis_result, top_n = 10) {
   if (!inherits(analysis_result, "wind_suitability_results")) {
     stop("Input must be output from wind_suitability_analysis()")
   }
   stats <- analysis_result$summary_stats$district_stats
-  summary_table <- stats[1:min(top_n, nrow(stats)), ] %>%
-    dplyr::mutate(
-      total_area_km2 = round(total_area_km2, 1),
-      suitable_area_km2 = round(suitable_area_km2, 1),
-      excluded_area_km2 = round(excluded_area_km2, 1),
-      suitable_percentage = round(suitable_percentage, 1),
-      excluded_percentage = round(excluded_percentage, 1)
-    ) %>%
-    dplyr::select(
-      District = NAME,
-      "Total Area (km^2)" = total_area_km2,
-      "Suitable Area (km^2)" = suitable_area_km2,
-      "Excluded Area (km^2)" = excluded_area_km2,
-      "Suitable (%)" = suitable_percentage,
-      "Excluded (%)" = excluded_percentage
-    )
+  summary_table <- stats[1:min(top_n, nrow(stats)), ]
+  summary_table <- within(summary_table, {
+    total_area_km2      <- round(total_area_km2, 1)
+    suitable_area_km2   <- round(suitable_area_km2, 1)
+    excluded_area_km2   <- round(excluded_area_km2, 1)
+    suitable_percentage <- round(suitable_percentage, 1)
+    excluded_percentage <- round(excluded_percentage, 1)
+  })
+  names(summary_table) <- c("District", "Total Area (km^2)", "Excluded Area (km^2)",
+                            "Suitable Area (km^2)", "Excluded (%)", "Suitable (%)")
   return(summary_table)
 }
 
-# --- NEW S3 CLASS AND METHODS FOR BUFFER STATS ---
+# --- S3 CLASS AND METHODS FOR BUFFER STATS ---
 
 #' Buffer Stats S3 Class Constructor
 #'
@@ -91,7 +82,6 @@ summary.buffer_stats <- function(object, ...) {
 #' Plot method for buffer_stats (simple bar chart)
 #' @param x buffer_stats object
 #' @param ... further arguments
-#' @importFrom ggplot2 ggplot aes geom_col labs theme_minimal
 #' @export
 plot.buffer_stats <- function(x, ...) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -131,9 +121,7 @@ calculate_buffer_stats <- function(analysis_result) {
 #' @param formats Vector of formats: "csv", "gpkg", "html"
 #' @export
 export_results <- function(analysis_result, output_dir = ".", formats = c("csv", "gpkg")) {
-  if (!dir.exists(output_dir)) {
-    dir.create(output_dir, recursive = TRUE)
-  }
+  if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
   if ("csv" %in% formats) {
     summary_table <- extract_summary_table(analysis_result, top_n = Inf)
     csv_path <- file.path(output_dir, "nrw_wind_suitability_summary.csv")

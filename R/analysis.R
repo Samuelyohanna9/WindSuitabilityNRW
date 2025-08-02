@@ -1,8 +1,7 @@
-
 #' Wind Energy Suitability Analysis for NRW
 #'
 #' Performs spatial analysis to identify suitable areas for wind energy development
-#' in North Rhine-Westphalia using Act on the Determination of Area Requirements for Onshore Wind Energy Systems (Windenergieflächenbedarfsgesetz- WindBG) exclusion criteria.
+#' in North Rhine-Westphalia using exclusion criteria (WindBG 2022).
 #'
 #' @param residential_buffer Numeric; buffer distance for residential areas in meters (default: 500)
 #' @param highway_buffer    Numeric; buffer distance for highways in meters (default: 200)
@@ -30,13 +29,13 @@ wind_suitability_analysis <- function(
     output_map        = TRUE,
     show_turbines     = FALSE
 ) {
-  ## 1. Check Packages
+  # 1. Check Packages
   message("Checking required packages...")
-  pkgs <- c("sf","dplyr","purrr","tidyr","ggplot2","tmap","leaflet")
+  pkgs <- c("sf", "dplyr", "purrr", "tidyr", "ggplot2", "tmap", "leaflet")
   purrr::walk(pkgs, ~ if (!requireNamespace(.x, quietly=TRUE))
     stop("Package '", .x, "' required but not installed"))
 
-  ## 2. Unzip Data
+  # 2. Unzip Data
   message("Unzipping spatial data...")
   zip_path <- system.file("extdata/nrw_wind_energy_data.zip", package="WindSuitabilityNRW")
   if (!file.exists(zip_path)) stop("Data zip not found: ", zip_path)
@@ -44,14 +43,14 @@ wind_suitability_analysis <- function(
   on.exit(unlink(td, recursive=TRUE), add=TRUE)
   utils::unzip(zip_path, exdir=td)
 
-  ## 3. Locate GeoPackage
+  # 3. Locate GeoPackage
   message("Locating GeoPackage...")
   gpkg_files <- list.files(td, pattern="\\.gpkg$", full.names=TRUE, recursive=TRUE)
   if (length(gpkg_files)==0) stop("No .gpkg found in ", td)
   gpkg <- gpkg_files[1]
   message("Using GeoPackage: ", gpkg)
 
-  ## 4. Read & Clean Layers
+  # 4. Read & Clean Layers
   message("Reading spatial layers...")
   safe_read <- function(path, layer) {
     message("  - Reading layer '", layer, "'")
@@ -78,7 +77,7 @@ wind_suitability_analysis <- function(
     turbines    = safe_read(gpkg, "nrw_existing_wind_turbines")
   )
 
-  ## 5. CRS Consistency
+  # 5. CRS Consistency
   message("Ensuring consistent coordinate reference system...")
   crs0 <- sf::st_crs(districts)
   layers <- lapply(layers, function(x) {
@@ -86,7 +85,7 @@ wind_suitability_analysis <- function(
     x
   })
 
-  ## 6. Validate Parameters
+  # 6. Validate Parameters
   message("Validating input parameters...")
   params <- list(
     residential_buffer = residential_buffer,
@@ -99,7 +98,7 @@ wind_suitability_analysis <- function(
     if (!is.numeric(.x) || .x < 0) stop(.y, " must be >= 0")
   })
 
-  ## 7. Build & Union Exclusion Zones
+  # 7. Build & Union Exclusion Zones
   message("Building exclusion buffers...")
   excl_bufs <- list(
     residential = layers$residential,
@@ -125,8 +124,22 @@ wind_suitability_analysis <- function(
   )
   exclusion_union <- sf::st_sf(geometry=union_geom)
 
-  ## 8. Compute District Statistics
+  # 8. Compute District Statistics
   message("Calculating district-level statistics...")
+  # Find the district name column robustly
+  name_col <- if ("NAME" %in% names(districts)) {
+    "NAME"
+  } else if ("gn" %in% names(districts)) {
+    "gn"
+  } else {
+    # fallback: just use first character column
+    char_cols <- names(districts)[sapply(districts, is.character)]
+    if (length(char_cols) == 0) stop("Could not find district name column!")
+    char_cols[1]
+  }
+  # Copy for later use
+  districts$NAME <- districts[[name_col]]
+
   districts <- suppressWarnings({
     districts %>%
       dplyr::mutate(total_area_km2 = as.numeric(sf::st_area(.)) / 1e6) %>%
@@ -140,10 +153,10 @@ wind_suitability_analysis <- function(
         excluded_percentage = ifelse(total_area_km2 > 0,
                                      (excluded_area_km2 / total_area_km2) * 100, 0),
         suitable_area_km2   = total_area_km2 - excluded_area_km2,
-        suitable_percentage = 100 - excluded_percentage,
-        NAME                = gn
+        suitable_percentage = 100 - excluded_percentage
       )
   })
+
   summary_stats <- list(
     total_nrw_area      = sum(districts$total_area_km2, na.rm=TRUE),
     total_excluded_area = sum(districts$excluded_area_km2, na.rm=TRUE),
@@ -155,18 +168,16 @@ wind_suitability_analysis <- function(
       dplyr::arrange(dplyr::desc(suitable_percentage))
   )
 
-  ## 9. Build Suitable-Areas Geometry
+  # 9. Build Suitable-Areas Geometry
   message("Preparing suitable-areas geometry...")
   suitable_areas <- sf::st_difference(districts, exclusion_union)
   turbine_pts <- suppressWarnings(
     sf::st_sf(geometry = sf::st_centroid(sf::st_geometry(layers$turbines)))
   )
 
-  ## 10. Visualization
+  # 10. Visualization
   if (output_map) {
     message("Generating visualizations...")
-
-    # a) Bar chart
     message("  - Plotting bar chart...")
     df <- summary_stats$district_stats
     bp <- ggplot2::ggplot(df,
@@ -178,7 +189,6 @@ wind_suitability_analysis <- function(
       ggplot2::theme_minimal()
     print(bp)
 
-    # b) Static tmap (suppress migration messages)
     message("  - Plotting static map...")
     suppressMessages({
       tm_suit <- tmap::tm_shape(suitable_areas) +
@@ -196,7 +206,6 @@ wind_suitability_analysis <- function(
     })
     print(tm_suit)
 
-    # c) Leaflet
     message("  - Plotting interactive Leaflet map...")
     suit_ll <- sf::st_transform(suitable_areas, 4326)
     turb_ll <- sf::st_transform(turbine_pts,    4326)
@@ -233,7 +242,6 @@ wind_suitability_analysis <- function(
     print(lf)
   }
 
-  ## 11. Done
   message("Analysis complete.")
   structure(
     list(

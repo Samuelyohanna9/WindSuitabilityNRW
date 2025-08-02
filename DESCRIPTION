@@ -3,32 +3,32 @@ Type: Package
 Title: Wind Energy Suitability Analysis for North Rhine-Westphalia
 Version: 0.1.0
 Authors@R: person(
-  "Samuel", "Yohanna",
-  email = "samuel.yohanna@uni-muenster.de",
-  role  = c("aut", "cre")
+    "Samuel", "Yohanna",
+    email = "samuel.yohanna@uni-muenster.de",
+    role = c("aut", "cre")
   )
 Description: Provides spatial analysis tools for evaluating wind energy
-  development potential in North Rhine-Westphalia, Germany. Implements
-  German planning regulations and environmental constraints to identify
-  suitable areas for wind turbine installation.
+    development potential in North Rhine-Westphalia, Germany. Implements
+    German planning regulations and environmental constraints to identify
+    suitable areas for wind turbine installation.
 License: MIT + file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 Depends:
-  R (>= 4.0.0)
+    R (>= 4.0.0)
 Imports:
-  sf (>= 1.0.0),
-  dplyr (>= 1.0.0),
-  leaflet (>= 2.0.0),
-  ggplot2 (>= 3.3.0),
-  purrr (>= 0.3.0),
-  htmlwidgets (>= 1.5.0),
-  tmap (>= 3.0.0),
-  tidyr (>= 1.1.0)
+    sf (>= 1.0.0),
+    dplyr (>= 1.0.0),
+    leaflet (>= 2.0.0),
+    ggplot2 (>= 3.3.0),
+    purrr (>= 0.3.0),
+    htmlwidgets (>= 1.5.0),
+    tmap (>= 3.0.0),
+    tidyr (>= 1.1.0)
 Suggests:
-  knitr,
-  rmarkdown,
-  testthat (>= 3.0.0)
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
 VignetteBuilder: knitr
 URL: https://github.com/samuelyohanna9/WindSuitabilityNRW
 BugReports: https://github.com/samuelyohanna9/WindSuitabilityNRW/issues

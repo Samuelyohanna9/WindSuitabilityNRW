@@ -1,19 +1,3 @@
-#' Print method for wind_suitability_results
-#'
-#' @param x A wind_suitability_results object.
-#' @param ... Ignored.
-#' @export
-print.wind_suitability_results <- function(x, ...) {
-  cat("Wind Energy Suitability Analysis Results\n")
-  cat("---------------------------------------\n")
-  cat("Total NRW area: ", round(x$summary_stats$total_nrw_area, 1), "km^2\n")
-  cat("Excluded area:  ", round(x$summary_stats$total_excluded_area, 1), "km^2 (",
-      round(x$summary_stats$percent_excluded, 1), "% of NRW)\n\n", sep = "")
-  cat("Top 3 districts by suitability:\n")
-  print(utils::head(x$summary_stats$district_stats[order(-x$summary_stats$district_stats$suitable_percentage), ], 3))
-  invisible(x)
-}
-
 #' Summary method for wind_suitability_results
 #'
 #' @param object A wind_suitability_results object.
@@ -48,7 +32,6 @@ plot.wind_suitability_results <- function(x, type = "bar", ...) {
 district_names <- function(x, ...) {
   UseMethod("district_names")
 }
-
 #' @export
 district_names.wind_suitability_results <- function(x, ...) {
   unique(x$summary_stats$district_stats$NAME)
@@ -64,7 +47,6 @@ district_names.wind_suitability_results <- function(x, ...) {
 top_districts <- function(x, n = 5, ...) {
   UseMethod("top_districts")
 }
-
 #' @export
 top_districts.wind_suitability_results <- function(x, n = 5, ...) {
   df <- x$summary_stats$district_stats
@@ -81,7 +63,6 @@ top_districts.wind_suitability_results <- function(x, n = 5, ...) {
 get_district_info <- function(x, name, ...) {
   UseMethod("get_district_info")
 }
-
 #' @export
 get_district_info.wind_suitability_results <- function(x, name, ...) {
   df <- x$summary_stats$district_stats

@@ -1,4 +1,3 @@
-
 #' Print method for wind_suitability_results
 #'
 #' @param x   A wind_suitability_results object
